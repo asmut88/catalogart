@@ -1,85 +1,63 @@
-import React, {useEffect, useState} from 'react';
-import './App.css';
-import axios, {AxiosResponse, CancelTokenSource} from 'axios'
-
-interface IPost {
-  product_id: number;
-  userId?: number;
-  title: string;
-  body: string;
-}
-
-const defaultPosts: IPost[] = []
+import React, {useEffect, useState} from 'react'
+import classes from './styles/BasicClass.module.css'
+import {IPost} from './interfaces/BasicInterfaces'
+import {GetRequest} from './http/HttpAxiosGet'
+import {AxiosResponse} from 'axios'
 
 const App = () => {
 
-    const [posts, setPosts] = React.useState<IPost[]>(defaultPosts);
+    const [posts, setPosts] = useState<IPost[]>([])
+    const [loading, setLoading] = useState<boolean>(false)
+    const [error, setError] = useState<string>('')
 
-  const [loading, setLoading]: [
-    boolean,
-    (loading: boolean) => void
-  ] = React.useState<boolean>(true);
+    useEffect(() => {
 
-  const [error, setError]: [string, (error: string) => void] = React.useState(
-      ''
-  );
+        GetRequest('https://jsonplaceholder.typicode.com/posts')
+            .then((res: AxiosResponse) => {
+                setPosts(res.data)
+                setLoading(false)
+            })
+            .catch((ex) => {
+                const error = 'Не удалось загрузить данные'
+                setError(error)
+                setLoading(false)
+            })
 
-  const cancelToken = axios.CancelToken; //create cancel token
-  const [cancelTokenSource, setCancelTokenSource]: [
-    CancelTokenSource,
-    (cancelTokenSource: CancelTokenSource) => void
-  ] = React.useState(cancelToken.source());
+    }, [])
 
-  const handleCancelClick = () => {
-    if (cancelTokenSource) {
-      cancelTokenSource.cancel('User cancelled operation');
-    }
-  };
+    return (
+        <div className={classes.Catalog}>
+            <ul className="posts">
+                <table className={classes.Block}>
+                    {posts.map((post: IPost) => (
+
+                        <tr key={post.product_id}>
+                            <td></td>
+                            <td className={classes.Image}></td>
+                            <td></td>
 
 
-  useEffect(() => {
-    axios
-        .get('https://artisant.io/api/products', {
-          cancelToken: cancelTokenSource.token,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-        })
-        .then((res) => res.data)
-        .then((response) =>
-            {
-            setPosts(response.data);
-            setLoading(false);}
-        )
-        .catch((ex) => {
-          let error = axios.isCancel(ex)
-              ? 'Request Cancelled'
-              : ex.code === 'ECONNABORTED'
-                  ? 'A timeout has occurred'
-                  : ex.response.status === 404
-                      ? 'Resource Not Found'
-                      : 'An unexpected error has occurred';
+                        </tr>
 
-          setError(error);
-          setLoading(false);
-        });
-  }, []);
+                    ))}
+                </table>
 
-  return (
-      <div className="App">
-        {loading && <button onClick={handleCancelClick}>Cancel</button>}
-        <ul className="posts">
-          {posts.map((post: IPost) => (
-              <li key={post.product_id}>
-                <h3>{post.title}</h3>
-                <p>{post.body}</p>
-              </li>
-          ))}
-        </ul>
-        {error && <p className="error">{error}</p>}
-      </div>
-  );
+            </ul>
+            {error && <p className="error">{error}</p>}
+        </div>
+    )
 }
 
-export default App;
+export default App
+
+
+{/*<div>*/
+}
+{/*    <img key={post.product_id} src='./images/jacket.jpg'/>*/
+}
+{/*    <h3>{post.name}</h3>*/
+}
+{/*    <p>{post.initial_price}</p>*/
+}
+{/*</div>*/
+}
